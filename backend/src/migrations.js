@@ -170,6 +170,13 @@ export async function runMigrations() {
     ]
     for (const q of idx) await c.query(q)
 
+    // Paramètres applicatifs (SMTP, SLA, permissions) — une seule ligne JSON
+    await c.query(`CREATE TABLE IF NOT EXISTS app_settings (
+      id INTEGER PRIMARY KEY DEFAULT 1,
+      data JSONB NOT NULL DEFAULT '{}'::jsonb
+    )`)
+    await c.query("INSERT INTO app_settings (id, data) VALUES (1, '{}'::jsonb) ON CONFLICT (id) DO NOTHING")
+
     await c.query('COMMIT')
   } catch (e) {
     await c.query('ROLLBACK')

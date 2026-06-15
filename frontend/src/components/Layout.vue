@@ -22,6 +22,7 @@
 
         <template v-if="user && user.role >= 1">
           <RouterLink class="nav-item" to="/mes-taches"><span>🔧</span><span class="nav-label">Mes Tâches</span></RouterLink>
+          <RouterLink class="nav-item" to="/mon-dashboard"><span>📊</span><span class="nav-label">Mon Dashboard</span></RouterLink>
         </template>
 
         <template v-if="user && user.role >= 2">
@@ -32,12 +33,17 @@
           </RouterLink>
           <RouterLink class="nav-item" to="/plan-de-charge"><span>📈</span><span class="nav-label">Plan de Charge</span></RouterLink>
           <RouterLink class="nav-item" to="/dashboard"><span>📊</span><span class="nav-label">Dashboard</span></RouterLink>
+          <RouterLink class="nav-item" to="/analyses"><span>📈</span><span class="nav-label">Analyses</span></RouterLink>
         </template>
 
         <template v-if="user && user.role >= 3">
           <div class="sb-divider"></div>
           <RouterLink class="nav-item" to="/administration"><span>⚙️</span><span class="nav-label">Administration</span></RouterLink>
+          <RouterLink class="nav-item" to="/parametres"><span>🔧</span><span class="nav-label">Paramètres</span></RouterLink>
         </template>
+
+        <div class="sb-divider"></div>
+        <RouterLink class="nav-item" to="/support"><span>🆘</span><span class="nav-label">Support</span></RouterLink>
       </nav>
 
       <div class="sb-footer">

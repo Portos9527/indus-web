@@ -3,6 +3,7 @@ import { many, one, pool } from '../db.js'
 import { authenticate, requireRole } from '../auth.js'
 import { now, today, nextNumero, addHistorique, addAudit, notify, wrap } from '../helpers.js'
 import { broadcast } from '../events.js'
+import { notifyResponsables } from '../email.js'
 
 const r = Router()
 r.use(authenticate)
@@ -72,6 +73,8 @@ r.post('/', wrap(async (req, res) => {
   await addHistorique(id, req.user.id, 'CRÉATION', { numero })
   await addAudit(req.user.id, req.user.nom_affiche, 'CRÉATION', { demande_id: id, numero })
   broadcast('demande', 'create', id)
+  notifyResponsables(`Nouvelle demande ${numero}`,
+    `<p>Nouvelle demande <b>${numero}</b> : ${req.body.outillage || ''}</p><p>Priorité : ${req.body.priorite || 'normale'}</p>`).catch(() => {})
   res.json(await one(`${LIST} WHERE d.id=$1`, [id]))
 }))
 

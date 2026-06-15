@@ -12,6 +12,8 @@ import tempsMasqueRoutes from './routes/tempsMasque.js'
 import planDeChargeRoutes from './routes/planDeCharge.js'
 import dashboardRoutes from './routes/dashboard.js'
 import configRoutes from './routes/config.js'
+import attachmentsRoutes from './routes/attachments.js'
+import adminRoutes from './routes/admin.js'
 import miscRoutes from './routes/misc.js'
 
 dotenv.config()
@@ -36,6 +38,8 @@ app.use('/api/temps-masque', tempsMasqueRoutes)
 app.use('/api/plan-de-charge', planDeChargeRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/config', configRoutes)
+app.use('/api/pieces', attachmentsRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/api', miscRoutes)
 
 // 404 API

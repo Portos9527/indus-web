@@ -36,6 +36,35 @@ const post = (p, b) => request('POST', p, b)
 const put  = (p, b) => request('PUT', p, b)
 const del  = (p)    => request('DELETE', p)
 
+// Upload multipart (pièces jointes)
+async function upload(path, file) {
+  const fd = new FormData()
+  fd.append('file', file)
+  const headers = {}
+  if (store.token) headers.Authorization = `Bearer ${store.token}`
+  try {
+    const res = await fetch(BASE + path, { method: 'POST', headers, body: fd })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) return { ok: false, error: data?.error || `Erreur ${res.status}` }
+    return { ok: true, data }
+  } catch { return { ok: false, error: 'Upload échoué' } }
+}
+
+// Téléchargement authentifié (déclenche la sauvegarde navigateur)
+async function download(path, filename) {
+  const headers = {}
+  if (store.token) headers.Authorization = `Bearer ${store.token}`
+  const res = await fetch(BASE + path, { headers })
+  if (!res.ok) return { ok: false, error: `Erreur ${res.status}` }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = filename || 'fichier'
+  document.body.appendChild(a); a.click(); a.remove()
+  URL.revokeObjectURL(url)
+  return { ok: true }
+}
+
 export const api = {
   // Auth
   login:          (login, password) => post('/auth/login', { login, password }),
@@ -106,4 +135,18 @@ export const api = {
 
   // Audit
   audit:          (page)    => get('/audit?page=' + (page || 0)),
+
+  // Pièces jointes (stockage VM)
+  pieces:         (did)     => get('/pieces/' + did),
+  uploadPiece:    (did, f)  => upload('/pieces/' + did, f),
+  telechargerPiece:(id, nom)=> download('/pieces/file/' + id, nom),
+  supprPiece:     (id)      => del('/pieces/' + id),
+
+  // Admin : paramètres, diagnostics, SQL, export
+  getSettings:    ()        => get('/admin/settings'),
+  saveSettings:   (p)       => put('/admin/settings', p),
+  testSmtp:       ()        => post('/admin/smtp-test'),
+  diagnostics:    ()        => get('/admin/diagnostics'),
+  sql:            (q)       => post('/admin/sql', { sql: q }),
+  exportCsv:      ()        => download('/admin/export', `INDUS_export_${new Date().toISOString().slice(0,10)}.csv`),
 }

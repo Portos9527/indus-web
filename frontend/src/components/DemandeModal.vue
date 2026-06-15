@@ -94,6 +94,20 @@
               <textarea v-model="newComment" class="form-control" placeholder="Ajouter un commentaire…" rows="3"></textarea>
             </div>
             <button class="btn btn-secondary btn-sm" :disabled="!newComment.trim()" @click="postComment">Envoyer</button>
+
+            <!-- Pièces jointes -->
+            <div style="font-weight:700;margin:20px 0 12px">📎 Pièces jointes</div>
+            <div v-for="f in pieces" :key="f.id" class="pj-item">
+              <span class="pj-name" @click="dl(f)">📄 {{ f.nom_fichier }}</span>
+              <span class="pj-date">{{ formatDate(f.date_ajout) }}</span>
+              <button class="tm-del" @click="delPiece(f.id)">🗑️</button>
+            </div>
+            <div v-if="pieces.length === 0" style="color:var(--text-3);font-size:12px;margin-bottom:8px">Aucune pièce jointe</div>
+            <label class="btn btn-secondary btn-sm" style="margin-top:8px;cursor:pointer;display:inline-block">
+              ➕ Ajouter un fichier
+              <input type="file" style="display:none" @change="uploadPiece" :disabled="uploading" />
+            </label>
+            <span v-if="uploading" style="margin-left:8px;font-size:12px;color:var(--text-3)">⏳ Envoi…</span>
           </div>
         </div>
       </div>
@@ -120,6 +134,8 @@ const user = computed(() => store.user)
 const comments = ref([])
 const newComment = ref('')
 const masques = ref([])
+const pieces = ref([])
+const uploading = ref(false)
 const avancement = ref(props.demande.avancement || 0)
 const ev = ref({ qualite: 0, cout: 0, delais: 0 })
 
@@ -133,10 +149,26 @@ const canEvaluer = computed(() => d.value.statut === 'En attente de validation' 
 const canAbandonner = computed(() => d.value.statut === 'En cours' && user.value?.role >= 2)
 
 onMounted(async () => {
-  const [c, m] = await Promise.all([api.commentaires(d.value.id), api.tempsMasque(d.value.id)])
+  const [c, m, p] = await Promise.all([api.commentaires(d.value.id), api.tempsMasque(d.value.id), api.pieces(d.value.id)])
   if (c.ok) comments.value = c.data
   if (m.ok) masques.value = m.data
+  if (p.ok) pieces.value = p.data
 })
+
+async function uploadPiece(e) {
+  const file = e.target.files[0]; if (!file) return
+  uploading.value = true
+  const r = await api.uploadPiece(d.value.id, file)
+  uploading.value = false
+  if (r.ok) { pieces.value.unshift(r.data); toastSuccess('Fichier ajouté') } else toastError(r.error)
+  e.target.value = ''
+}
+function dl(f) { api.telechargerPiece(f.id, f.nom_fichier) }
+async function delPiece(id) {
+  if (!confirm('Supprimer ce fichier ?')) return
+  const r = await api.supprPiece(id)
+  if (r.ok) pieces.value = pieces.value.filter(p => p.id !== id)
+}
 
 async function postComment() {
   const r = await api.ajoutComment(d.value.id, newComment.value)
@@ -183,4 +215,8 @@ async function abandonner() {
 .tm-row { display: flex; align-items: center; gap: 8px; }
 .tm-row .form-control { flex: 1; }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.pj-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.pj-name { flex: 1; cursor: pointer; color: var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj-name:hover { text-decoration: underline; }
+.pj-date { font-size: 11px; color: var(--text-3); white-space: nowrap; }
 </style>
