@@ -3,6 +3,7 @@ import { store } from './store.js'
 
 import Layout from './components/Layout.vue'
 import Login from './views/Login.vue'
+import Sso from './views/Sso.vue'
 import MesDemandes from './views/MesDemandes.vue'
 import NouvelleDemande from './views/NouvelleDemande.vue'
 import MesTaches from './views/MesTaches.vue'
@@ -18,6 +19,7 @@ import Support from './views/Support.vue'
 
 const routes = [
   { path: '/login', component: Login, meta: { public: true } },
+  { path: '/sso', component: Sso, meta: { public: true } },
   {
     path: '/',
     component: Layout,

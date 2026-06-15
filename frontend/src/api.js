@@ -69,6 +69,7 @@ export const api = {
   // Auth
   login:          (login, password) => post('/auth/login', { login, password }),
   me:             ()                => get('/auth/me'),
+  samlEnabled:    ()                => get('/auth/saml/enabled'),
   changePassword: (ancien, nouveau) => post('/auth/change-password', { ancien, nouveau }),
 
   // Demandes
