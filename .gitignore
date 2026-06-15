@@ -1,4 +1,8 @@
 node_modules/
-dist/
 .env
 *.log
+
+# Le dist du frontend web est volontairement versionné :
+# il est déployé tel quel sur la VM via git pull (pas de build sur la VM).
+# (backend n'a pas de dist)
+!frontend/dist/
