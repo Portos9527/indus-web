@@ -6,8 +6,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // En dev, proxy /api vers le backend (évite les soucis CORS)
-      '/api': 'http://localhost:3001',
+      // En dev, proxy /api vers le backend (évite les soucis CORS).
+      // changeOrigin + ws pour gérer aussi le flux SSE /api/events.
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 })

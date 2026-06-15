@@ -21,7 +21,7 @@
               <td><div style="display:flex;gap:6px">
                 <button class="btn btn-secondary btn-sm" @click="openEdit(u)">✏️</button>
                 <button class="btn btn-ghost btn-sm" @click="resetPwd(u)">🔑</button>
-                <button class="btn btn-ghost btn-sm" :disabled="u.id===store.user.id" @click="toggle(u)">{{ u.actif?'🔴':'✅' }}</button>
+                <button class="btn btn-ghost btn-sm" :disabled="u.id===store.user?.id" @click="toggle(u)">{{ u.actif?'🔴':'✅' }}</button>
               </div></td>
             </tr>
           </tbody>
