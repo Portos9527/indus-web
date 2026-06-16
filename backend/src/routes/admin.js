@@ -94,4 +94,41 @@ r.get('/export', requireRole(2), wrap(async (req, res) => {
   res.send('﻿' + lines.join('\r\n'))
 }))
 
+// ════════ ESPACE ÉDITEUR (role 4) : explorateur/éditeur de tables ════════
+const TABLES = ['utilisateurs','demandes','commentaires','notifications','pieces_jointes','historique','config','audit_log','conges','temps_masque']
+const okTable = (t) => TABLES.includes(t)
+
+r.get('/tables', requireRole(4), wrap(async (req, res) => {
+  const out = []
+  for (const t of TABLES) { const c = await scalar(`SELECT COUNT(*) FROM "${t}"`).catch(() => 0); out.push({ name: t, count: Number(c) }) }
+  res.json(out)
+}))
+
+r.get('/table/:t', requireRole(4), wrap(async (req, res) => {
+  const t = req.params.t; if (!okTable(t)) return res.status(400).json({ error: 'Table non autorisée' })
+  const cols = await many(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position`, [t])
+  const total = Number(await scalar(`SELECT COUNT(*) FROM "${t}"`))
+  const limit = Math.min(200, Number(req.query.limit) || 50)
+  const offset = Math.max(0, Number(req.query.offset) || 0)
+  const rows = (await many(`SELECT to_jsonb(x) AS row FROM "${t}" x ORDER BY 1 LIMIT $1 OFFSET $2`, [limit, offset])).map(r => r.row)
+  res.json({ columns: cols.map(c => c.column_name), rows, total })
+}))
+
+r.put('/table/:t', requireRole(4), wrap(async (req, res) => {
+  const t = req.params.t; if (!okTable(t)) return res.status(400).json({ error: 'Table non autorisée' })
+  const cols = (await many(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position`, [t])).map(c => c.column_name)
+  if (!cols.includes('id')) return res.status(400).json({ error: "Table sans colonne 'id'" })
+  const set = cols.map(c => `"${c}"=rec."${c}"`).join(', ')
+  const sql = `WITH rec AS (SELECT * FROM jsonb_populate_record(NULL::"${t}", $1::jsonb)) UPDATE "${t}" o SET ${set} FROM rec WHERE o."id"=rec."id"`
+  const result = await pool.query(sql, [JSON.stringify(req.body)])
+  if (!result.rowCount) return res.status(404).json({ error: 'Ligne introuvable (id)' })
+  res.json({ ok: true })
+}))
+
+r.delete('/table/:t/:id', requireRole(4), wrap(async (req, res) => {
+  const t = req.params.t; if (!okTable(t)) return res.status(400).json({ error: 'Table non autorisée' })
+  await pool.query(`DELETE FROM "${t}" WHERE id=$1`, [req.params.id])
+  res.json({ ok: true })
+}))
+
 export default r

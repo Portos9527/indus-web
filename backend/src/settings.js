@@ -6,6 +6,7 @@ const DEFAULTS = {
   // permissions[role] = { creer, valider, voirTous, ... } ; surcharges par utilisateur via permsUser
   permsRole: {},
   permsUser: {},
+  techProfiles: {}, // par technicien : { dispo, competences[], couleur, capacite }
 }
 
 export async function getSettings() {

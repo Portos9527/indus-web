@@ -8,6 +8,7 @@ import MesDemandes from './views/MesDemandes.vue'
 import NouvelleDemande from './views/NouvelleDemande.vue'
 import MesTaches from './views/MesTaches.vue'
 import Recherche from './views/Recherche.vue'
+import ToutesDemandes from './views/ToutesDemandes.vue'
 import Validation from './views/Validation.vue'
 import PlanDeCharge from './views/PlanDeCharge.vue'
 import Dashboard from './views/Dashboard.vue'
@@ -33,6 +34,7 @@ const routes = [
       { path: 'validation',     component: Validation,    meta: { role: 2 } },
       { path: 'plan-de-charge', component: PlanDeCharge,  meta: { role: 2 } },
       { path: 'dashboard',      component: Dashboard,     meta: { role: 2 } },
+      { path: 'toutes',         component: ToutesDemandes, meta: { role: 2 } },
       { path: 'analyses',       component: Analyses,      meta: { role: 2 } },
       { path: 'administration', component: Administration, meta: { role: 3 } },
       { path: 'parametres',     component: Parametres,    meta: { role: 3 } },

@@ -11,7 +11,8 @@ const SAFE = 'id, nom_session, nom_affiche, role, initiales, email, actif, derni
 
 // Tous les utilisateurs (admin)
 r.get('/', requireRole(3), wrap(async (req, res) => {
-  res.json(await many(`SELECT ${SAFE} FROM utilisateurs ORDER BY nom_affiche`))
+  const filtre = req.user.role >= 4 ? '' : 'WHERE role < 4'
+  res.json(await many(`SELECT ${SAFE} FROM utilisateurs ${filtre} ORDER BY nom_affiche`))
 }))
 
 // Techniciens actifs (pour assignation)
@@ -45,6 +46,10 @@ r.put('/:id', requireRole(3), wrap(async (req, res) => {
   const { nom_affiche, initiales, role, email, actif } = req.body
   if (Number(req.params.id) === req.user.id && actif === 0)
     return res.status(400).json({ error: 'Vous ne pouvez pas désactiver votre propre compte' })
+  // Protection du rôle Éditeur (4) : seul un Éditeur peut toucher/attribuer ce niveau
+  const cible = await one('SELECT role FROM utilisateurs WHERE id=$1', [req.params.id])
+  if (cible && cible.role === 4 && req.user.role < 4) return res.status(403).json({ error: 'Compte Éditeur protégé' })
+  if (Number(role) === 4 && req.user.role < 4) return res.status(403).json({ error: 'Seul un Éditeur peut attribuer ce rôle' })
   const u = await one(
     `UPDATE utilisateurs SET nom_affiche=$1, initiales=$2, role=$3, email=$4, actif=$5
      WHERE id=$6 RETURNING ${SAFE}`,

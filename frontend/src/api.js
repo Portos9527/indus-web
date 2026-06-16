@@ -152,4 +152,10 @@ export const api = {
   diagnostics:    ()        => get('/admin/diagnostics'),
   sql:            (q)       => post('/admin/sql', { sql: q }),
   exportCsv:      ()        => download('/admin/export', `INDUS_export_${new Date().toISOString().slice(0,10)}.csv`),
+
+  // Éditeur : explorateur de tables (role 4)
+  tables:         ()              => get('/admin/tables'),
+  tableData:      (t, lim, off)   => get(`/admin/table/${t}?limit=${lim||50}&offset=${off||0}`),
+  updateRow:      (t, row)        => put(`/admin/table/${t}`, row),
+  deleteRow:      (t, id)         => del(`/admin/table/${t}/${id}`),
 }

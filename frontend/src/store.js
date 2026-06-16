@@ -49,7 +49,7 @@ export const toastError   = m => toast(m, 'error')
 export const toastInfo    = m => toast(m, 'info')
 
 // ── Helpers rôle ──
-export const ROLE_LABEL = ['Demandeur', 'Technicien', 'Responsable', 'Admin']
+export const ROLE_LABEL = ['Demandeur', 'Technicien', 'Responsable', 'Admin', 'Éditeur']
 export const roleLabel = r => ROLE_LABEL[r] || 'Inconnu'
 
 // ── Helpers format ──
