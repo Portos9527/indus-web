@@ -1,9 +1,8 @@
 import { Router } from 'express'
 import { many, one, pool } from '../db.js'
 import { authenticate, requireRole } from '../auth.js'
-import { now, today, nextNumero, addHistorique, addAudit, notify, wrap } from '../helpers.js'
+import { now, today, nextNumero, addHistorique, addAudit, notify, mailResponsables, wrap } from '../helpers.js'
 import { broadcast } from '../events.js'
-import { notifyResponsables } from '../email.js'
 
 const r = Router()
 r.use(authenticate)
@@ -73,7 +72,7 @@ r.post('/', wrap(async (req, res) => {
   await addHistorique(id, req.user.id, 'CRÉATION', { numero })
   await addAudit(req.user.id, req.user.nom_affiche, 'CRÉATION', { demande_id: id, numero })
   broadcast('demande', 'create', id)
-  notifyResponsables(`Nouvelle demande ${numero}`,
+  mailResponsables('creation', `Nouvelle demande ${numero}`,
     `<p>Nouvelle demande <b>${numero}</b> : ${req.body.outillage || ''}</p><p>Priorité : ${req.body.priorite || 'normale'}</p>`).catch(() => {})
   res.json(await one(`${LIST} WHERE d.id=$1`, [id]))
 }))
@@ -91,8 +90,9 @@ r.post('/:id/valider', requireRole(2), wrap(async (req, res) => {
   )
   await addHistorique(req.params.id, req.user.id, 'VALIDATION', null)
   await addAudit(req.user.id, req.user.nom_affiche, 'VALIDATION', { demande_id: req.params.id })
-  const d = await one('SELECT numero, outillage FROM demandes WHERE id=$1', [req.params.id])
+  const d = await one('SELECT numero, outillage, demandeur_id FROM demandes WHERE id=$1', [req.params.id])
   await notify(b.assigne_a, req.params.id, 'nouvelle_affectation', `Nouvelle demande affectée : ${d.outillage}`)
+  if (d.demandeur_id) await notify(d.demandeur_id, req.params.id, 'validee', `Votre demande ${d.numero} a été validée`)
   broadcast('demande', 'update', Number(req.params.id))
   res.json({ ok: true })
 }))
@@ -148,6 +148,9 @@ r.post('/:id/evaluer', wrap(async (req, res) => {
     [qualite, cout, delais, now(), req.params.id]
   )
   await addHistorique(req.params.id, req.user.id, 'CLÔTURE', { qualite, cout, delais })
+  const dc = await one('SELECT numero, assigne_a, validateur_id FROM demandes WHERE id=$1', [req.params.id])
+  if (dc?.assigne_a) await notify(dc.assigne_a, req.params.id, 'cloturee', `Demande ${dc.numero} clôturée par le demandeur`)
+  if (dc?.validateur_id && dc.validateur_id !== dc.assigne_a) await notify(dc.validateur_id, req.params.id, 'cloturee', `Demande ${dc.numero} clôturée`)
   broadcast('demande', 'update', Number(req.params.id))
   res.json({ ok: true })
 }))

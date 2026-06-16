@@ -7,7 +7,7 @@ import { now, wrap } from '../helpers.js'
 const r = Router()
 r.use(authenticate)
 
-const SAFE = 'id, nom_session, nom_affiche, role, initiales, email, actif, notif_mail, derniere_connexion, date_creation'
+const SAFE = 'id, nom_session, nom_affiche, role, initiales, email, actif, notif_mail, notif_prefs, derniere_connexion, date_creation'
 
 // Tous les utilisateurs (admin)
 r.get('/', requireRole(3), wrap(async (req, res) => {
@@ -68,14 +68,34 @@ r.post('/:id/toggle', requireRole(3), wrap(async (req, res) => {
   res.json(u)
 }))
 
-// Activer/désactiver les notifications email d'un utilisateur (responsable+ pour son équipe)
+// Clés d'événements email autorisées (par type de mail)
+const EVENT_KEYS = ['creation', 'affectation', 'validation', 'rejet', 'cloture', 'rappel']
+
+// Préférences mail d'un utilisateur (responsable+ pour son équipe).
+// Accepte { enabled } (interrupteur maître) et/ou { prefs: { creation:false, ... } }.
 r.post('/:id/notif-mail', requireRole(2), wrap(async (req, res) => {
-  const cible = await one('SELECT role FROM utilisateurs WHERE id=$1', [req.params.id])
+  const cible = await one('SELECT role, notif_prefs FROM utilisateurs WHERE id=$1', [req.params.id])
   if (!cible) return res.status(404).json({ error: 'Utilisateur introuvable' })
   // un responsable (2) ne gère que les rôles strictement inférieurs ; un admin gère tout le monde
   if (req.user.role < 3 && cible.role >= req.user.role) return res.status(403).json({ error: 'Hors de votre périmètre' })
-  const val = req.body?.enabled ? 1 : 0
-  const u = await one(`UPDATE utilisateurs SET notif_mail=$1 WHERE id=$2 RETURNING ${SAFE}`, [val, req.params.id])
+
+  const sets = [], vals = []
+  if (req.body?.enabled !== undefined) {
+    vals.push(req.body.enabled ? 1 : 0)
+    sets.push(`notif_mail=$${vals.length}`)
+  }
+  if (req.body?.prefs && typeof req.body.prefs === 'object') {
+    // on ne conserve que les clés connues, valeurs booléennes
+    const merged = { ...(cible.notif_prefs || {}) }
+    for (const k of EVENT_KEYS) {
+      if (k in req.body.prefs) merged[k] = !!req.body.prefs[k]
+    }
+    vals.push(JSON.stringify(merged))
+    sets.push(`notif_prefs=$${vals.length}::jsonb`)
+  }
+  if (!sets.length) return res.status(400).json({ error: 'Rien à modifier' })
+  vals.push(req.params.id)
+  const u = await one(`UPDATE utilisateurs SET ${sets.join(', ')} WHERE id=$${vals.length} RETURNING ${SAFE}`, vals)
   res.json(u)
 }))
 

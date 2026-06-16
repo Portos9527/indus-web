@@ -116,17 +116,26 @@
     <div v-show="tab==='notifs'" class="card">
       <div class="card-header"><h3>🔔 Notifications mail par utilisateur</h3></div>
       <div class="card-body">
-        <p style="color:var(--text-3);font-size:12px;margin-top:0">Activez/désactivez l'envoi des notifications par email pour chaque utilisateur. (Nécessite un email renseigné + SMTP configuré.)</p>
-        <div v-for="u in users" :key="u.id" class="notif-row">
-          <div class="avatar" :style="{ background: avatarColor(u.id) }" style="width:32px;height:32px;font-size:11px">{{ initials(u.nom_affiche) }}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600">{{ u.nom_affiche }} <span style="font-size:11px;color:var(--text-3)">· {{ ROLE_LABEL[u.role] }}</span></div>
-            <div style="font-size:12px;color:var(--text-3)">{{ u.email || '— pas d\'email —' }}</div>
+        <p style="color:var(--text-3);font-size:12px;margin-top:0">Choisissez quels emails chaque utilisateur reçoit. L'interrupteur principal coupe tous les mails ; sinon, décochez seulement les types à désactiver. (Nécessite un email renseigné + SMTP configuré.)</p>
+        <div v-for="u in users" :key="u.id" class="notif-card">
+          <div class="notif-card-head">
+            <div class="avatar" :style="{ background: avatarColor(u.id) }" style="width:32px;height:32px;font-size:11px">{{ initials(u.nom_affiche) }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">{{ u.nom_affiche }} <span style="font-size:11px;color:var(--text-3)">· {{ ROLE_LABEL[u.role] }}</span></div>
+              <div style="font-size:12px;color:var(--text-3)">{{ u.email || '— pas d\'email —' }}</div>
+            </div>
+            <label class="switch" title="Activer/couper tous les emails">
+              <input type="checkbox" :checked="u.notif_mail===1" :disabled="!u.email" @change="toggleNotif(u, $event.target.checked)" />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" :checked="u.notif_mail===1" :disabled="!u.email" @change="toggleNotif(u, $event.target.checked)" />
-            <span class="slider"></span>
-          </label>
+          <div class="notif-events" :class="{ disabled: u.notif_mail!==1 || !u.email }">
+            <label v-for="ev in EVENTS" :key="ev.k" class="notif-evt">
+              <input type="checkbox" :checked="prefEnabled(u, ev.k)" :disabled="u.notif_mail!==1 || !u.email"
+                     @change="toggleNotifPref(u, ev.k, $event.target.checked)" />
+              <span>{{ ev.label }}</span>
+            </label>
+          </div>
         </div>
         <div v-if="users.length===0" style="color:var(--text-3);font-size:13px">Aucun utilisateur</div>
       </div>
@@ -276,9 +285,23 @@ function permUserState(uid,p){ const v=s.value.permsUser?.[uid]?.[p]; return v==
 function setPermUser(uid,p,val){ if(!s.value.permsUser) s.value.permsUser={}; if(!s.value.permsUser[uid]) s.value.permsUser[uid]={}; if(val==='') delete s.value.permsUser[uid][p]; else s.value.permsUser[uid][p]=(val==='1') }
 
 // ── Notifications mail par utilisateur ──
+const EVENTS = [
+  { k:'creation',    label:'📝 Création de demande' },
+  { k:'affectation', label:'📌 Affectation d\'une tâche' },
+  { k:'validation',  label:'✅ Validation' },
+  { k:'rejet',       label:'⛔ Rejet' },
+  { k:'cloture',     label:'🏁 Clôture' },
+  { k:'rappel',      label:'⏰ Rappel d\'échéance' },
+]
+function prefEnabled(u, key) { return (u.notif_prefs?.[key]) !== false } // absent = activé
 async function toggleNotif(u, enabled) {
   const r = await api.toggleNotifMail(u.id, enabled)
-  if (r.ok) { u.notif_mail = enabled ? 1 : 0; toastSuccess('Notifications ' + (enabled ? 'activées' : 'désactivées')) }
+  if (r.ok) { u.notif_mail = enabled ? 1 : 0; toastSuccess('Emails ' + (enabled ? 'activés' : 'coupés')) }
+  else { toastError(r.error) }
+}
+async function toggleNotifPref(u, key, enabled) {
+  const r = await api.setNotifPrefs(u.id, { [key]: enabled })
+  if (r.ok) { u.notif_prefs = r.data.notif_prefs || {}; toastSuccess('Préférence enregistrée') }
   else { toastError(r.error) }
 }
 
@@ -332,8 +355,13 @@ function fmt(v){ return v===null||v===undefined?'—':(typeof v==='object'?JSON.
 .ed-count { font-size:11px; color:var(--text-3); }
 .ed-data { flex:1; padding:0 16px; min-width:0; }
 /* Notifications */
-.notif-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
-.notif-row .avatar { border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; flex-shrink:0; }
+.notif-card { border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; }
+.notif-card-head { display:flex; align-items:center; gap:12px; }
+.notif-card .avatar { border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; flex-shrink:0; }
+.notif-events { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 14px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border); }
+.notif-events.disabled { opacity:.45; }
+.notif-evt { display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+.notif-evt input { cursor:pointer; }
 .switch { position:relative; display:inline-block; width:42px; height:23px; flex-shrink:0; }
 .switch input { opacity:0; width:0; height:0; }
 .slider { position:absolute; inset:0; background:var(--border); border-radius:99px; transition:.2s; cursor:pointer; }

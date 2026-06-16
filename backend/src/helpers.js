@@ -1,5 +1,29 @@
-import { pool, scalar, one } from './db.js'
+import { pool, scalar, one, many } from './db.js'
 import { sendMail } from './email.js'
+
+// Mapping type d'événement applicatif → clé de préférence email
+const TYPE_KEY = {
+  nouvelle_affectation: 'affectation', validee: 'validation', rejetee: 'rejet',
+  cloturee: 'cloture', travail_termine: 'cloture', rappel: 'rappel', creation: 'creation',
+}
+
+// Renvoie l'email de l'utilisateur s'il accepte ce type de mail, sinon null.
+export async function wantsMail(userId, key) {
+  const u = await one('SELECT email, notif_mail, notif_prefs FROM utilisateurs WHERE id=$1', [userId])
+  if (!u || !u.notif_mail || !u.email) return null
+  const prefs = u.notif_prefs || {}
+  if (prefs[key] === false) return null // désactivé explicitement
+  return u.email
+}
+
+// Envoie un email aux responsables/admins qui ont opté pour ce type.
+export async function mailResponsables(key, subject, html) {
+  const rows = await many('SELECT id FROM utilisateurs WHERE role >= 2 AND actif = 1')
+  for (const r of rows) {
+    const m = await wantsMail(r.id, key)
+    if (m) sendMail(m, subject, html).catch(() => {})
+  }
+}
 
 export const now = () => new Date().toISOString().slice(0, 19)
 export const today = () => new Date().toISOString().slice(0, 10)
@@ -35,12 +59,11 @@ export async function notify(userId, demandeId, type, message) {
     'INSERT INTO notifications (user_id, demande_id, type, message, lue, date) VALUES ($1,$2,$3,$4,0,$5)',
     [userId, demandeId, type, message, now()]
   )
-  // Email si l'utilisateur a activé les notifications mail + email renseigné (non bloquant)
+  // Email si l'utilisateur a activé ce type de notification (non bloquant)
   try {
-    const u = await one('SELECT email, notif_mail FROM utilisateurs WHERE id=$1', [userId])
-    if (u?.notif_mail && u.email) {
-      sendMail(u.email, 'INDUS — notification', `<p>${message}</p>`).catch(() => {})
-    }
+    const key = TYPE_KEY[type] || 'autre'
+    const mail = await wantsMail(userId, key)
+    if (mail) sendMail(mail, 'INDUS — notification', `<p>${message}</p>`).catch(() => {})
   } catch { /* ignore */ }
 }
 

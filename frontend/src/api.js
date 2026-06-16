@@ -98,6 +98,7 @@ export const api = {
   toggleUser:     (id)      => post(`/users/${id}/toggle`),
   resetPassword:  (id, pw)  => post(`/users/${id}/reset-password`, { password: pw }),
   toggleNotifMail:(id, en)  => post(`/users/${id}/notif-mail`, { enabled: en }),
+  setNotifPrefs:  (id, prefs)=> post(`/users/${id}/notif-mail`, { prefs }),
 
   // Congés
   conges:         ()        => get('/conges'),

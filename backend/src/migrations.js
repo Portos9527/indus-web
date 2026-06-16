@@ -46,6 +46,8 @@ export async function runMigrations() {
     // colonnes manquantes (mot_de_passe est spécifique au web).
     await c.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS mot_de_passe TEXT')
     await c.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS notif_mail INTEGER NOT NULL DEFAULT 1')
+    // Préférences email par type d'événement ({} = tous activés par défaut)
+    await c.query("ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS notif_prefs JSONB NOT NULL DEFAULT '{}'::jsonb")
 
     await c.query(`
       CREATE TABLE IF NOT EXISTS demandes (
