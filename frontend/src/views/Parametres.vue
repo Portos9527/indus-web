@@ -112,6 +112,26 @@
       </div>
     </div>
 
+    <!-- Notifications mail par utilisateur -->
+    <div v-show="tab==='notifs'" class="card">
+      <div class="card-header"><h3>🔔 Notifications mail par utilisateur</h3></div>
+      <div class="card-body">
+        <p style="color:var(--text-3);font-size:12px;margin-top:0">Activez/désactivez l'envoi des notifications par email pour chaque utilisateur. (Nécessite un email renseigné + SMTP configuré.)</p>
+        <div v-for="u in users" :key="u.id" class="notif-row">
+          <div class="avatar" :style="{ background: avatarColor(u.id) }" style="width:32px;height:32px;font-size:11px">{{ initials(u.nom_affiche) }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600">{{ u.nom_affiche }} <span style="font-size:11px;color:var(--text-3)">· {{ ROLE_LABEL[u.role] }}</span></div>
+            <div style="font-size:12px;color:var(--text-3)">{{ u.email || '— pas d\'email —' }}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" :checked="u.notif_mail===1" :disabled="!u.email" @change="toggleNotif(u, $event.target.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div v-if="users.length===0" style="color:var(--text-3);font-size:13px">Aucun utilisateur</div>
+      </div>
+    </div>
+
     <!-- Profils techniciens -->
     <div v-show="tab==='profils'" class="card">
       <div class="card-header"><h3>👥 Profils techniciens</h3><button class="btn btn-primary btn-sm" @click="save">💾 Enregistrer</button></div>
@@ -188,7 +208,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { store, toastSuccess, toastError, ROLE_LABEL } from '../store.js'
+import { store, toastSuccess, toastError, ROLE_LABEL, avatarColor, initials } from '../store.js'
 import { api } from '../api.js'
 
 const role = computed(() => store.user?.role ?? 0)
@@ -198,6 +218,7 @@ const tabs = computed(() => {
   const t = [
     { id:'sla', label:'⏱️ Délais' },
     { id:'perms', label:'🔐 Permissions' },
+    { id:'notifs', label:'🔔 Notifications mail' },
     { id:'profils', label:'👥 Profils techniciens' },
   ]
   if (isAdmin.value) t.push({ id:'smtp', label:'📧 SMTP' }, { id:'diag', label:'🩺 Diagnostic' }, { id:'sql', label:'🖥️ SQL' }, { id:'export', label:'📥 Export' })
@@ -254,6 +275,13 @@ function togglePermRole(rk,p,val){ if(!s.value.permsRole) s.value.permsRole={}; 
 function permUserState(uid,p){ const v=s.value.permsUser?.[uid]?.[p]; return v===true?'1':v===false?'0':'' }
 function setPermUser(uid,p,val){ if(!s.value.permsUser) s.value.permsUser={}; if(!s.value.permsUser[uid]) s.value.permsUser[uid]={}; if(val==='') delete s.value.permsUser[uid][p]; else s.value.permsUser[uid][p]=(val==='1') }
 
+// ── Notifications mail par utilisateur ──
+async function toggleNotif(u, enabled) {
+  const r = await api.toggleNotifMail(u.id, enabled)
+  if (r.ok) { u.notif_mail = enabled ? 1 : 0; toastSuccess('Notifications ' + (enabled ? 'activées' : 'désactivées')) }
+  else { toastError(r.error) }
+}
+
 // ── Profils techniciens ──
 function prof(id){ return { ...PROF_DEF, ...(s.value.techProfiles?.[id]||{}) } }
 function setProf(id,key,val){ if(!s.value.techProfiles) s.value.techProfiles={}; if(!s.value.techProfiles[id]) s.value.techProfiles[id]={...PROF_DEF}; s.value.techProfiles[id][key]=val }
@@ -303,4 +331,14 @@ function fmt(v){ return v===null||v===undefined?'—':(typeof v==='object'?JSON.
 .ed-tbtn.active { background:var(--blue-l,#eff6ff); color:var(--blue); font-weight:700; }
 .ed-count { font-size:11px; color:var(--text-3); }
 .ed-data { flex:1; padding:0 16px; min-width:0; }
+/* Notifications */
+.notif-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+.notif-row .avatar { border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; flex-shrink:0; }
+.switch { position:relative; display:inline-block; width:42px; height:23px; flex-shrink:0; }
+.switch input { opacity:0; width:0; height:0; }
+.slider { position:absolute; inset:0; background:var(--border); border-radius:99px; transition:.2s; cursor:pointer; }
+.slider::before { content:''; position:absolute; width:17px; height:17px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+.switch input:checked + .slider { background:var(--blue); }
+.switch input:checked + .slider::before { transform:translateX(19px); }
+.switch input:disabled + .slider { opacity:.4; cursor:not-allowed; }
 </style>

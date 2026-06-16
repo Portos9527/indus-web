@@ -94,10 +94,10 @@ async function saveUser(){
 async function toggle(u){ const r=await api.toggleUser(u.id); if(r.ok) await loadUsers(); else toastError(r.error) }
 async function resetPwd(u){ const pw=prompt(`Nouveau mot de passe pour ${u.nom_affiche} :`); if(!pw) return; const r=await api.resetPassword(u.id,pw); if(r.ok) toastSuccess('Mot de passe réinitialisé'); else toastError(r.error) }
 
-async function addFamille(){ if(!newFam.value.trim())return; const r=await api.ajoutFamille(newFam.value); if(r.ok){familles.value.push(r.data);newFam.value=''} }
-async function delFamille(f){ if(!confirm('Supprimer ?'))return; const r=await api.supprFamille(f.id); if(r.ok)familles.value=familles.value.filter(x=>x.id!==f.id); else toastError(r.error) }
-async function addCat(){ if(!newCat.value.trim()||!selFam.value)return; const r=await api.ajoutCategorie(newCat.value,selFam.value); if(r.ok){categories.value.push(r.data);newCat.value=''} }
-async function delCat(c){ const r=await api.supprCategorie(c.id); if(r.ok)categories.value=categories.value.filter(x=>x.id!==c.id) }
+async function addFamille(){ if(!newFam.value.trim())return; const r=await api.ajoutFamille(newFam.value); if(r.ok){familles.value.push(r.data);newFam.value='';toastSuccess('Famille ajoutée')} else toastError(r.error) }
+async function delFamille(f){ if(!confirm('Supprimer ?'))return; const r=await api.supprFamille(f.id); if(r.ok){familles.value=familles.value.filter(x=>x.id!==f.id);toastSuccess('Famille supprimée')} else toastError(r.error) }
+async function addCat(){ if(!selFam.value){toastError('Sélectionnez d\'abord une famille');return} if(!newCat.value.trim())return; const r=await api.ajoutCategorie(newCat.value,selFam.value); if(r.ok){categories.value.push(r.data);newCat.value='';toastSuccess('Catégorie ajoutée')} else toastError(r.error) }
+async function delCat(c){ if(!confirm('Supprimer ?'))return; const r=await api.supprCategorie(c.id); if(r.ok){categories.value=categories.value.filter(x=>x.id!==c.id);toastSuccess('Catégorie supprimée')} else toastError(r.error) }
 </script>
 
 <style scoped>

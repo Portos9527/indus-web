@@ -45,6 +45,7 @@ export async function runMigrations() {
     // Compatibilité : si la table vient de la version desktop, ajouter les
     // colonnes manquantes (mot_de_passe est spécifique au web).
     await c.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS mot_de_passe TEXT')
+    await c.query('ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS notif_mail INTEGER NOT NULL DEFAULT 1')
 
     await c.query(`
       CREATE TABLE IF NOT EXISTS demandes (

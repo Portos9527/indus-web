@@ -1,4 +1,5 @@
-import { pool, scalar } from './db.js'
+import { pool, scalar, one } from './db.js'
+import { sendMail } from './email.js'
 
 export const now = () => new Date().toISOString().slice(0, 19)
 export const today = () => new Date().toISOString().slice(0, 10)
@@ -34,6 +35,13 @@ export async function notify(userId, demandeId, type, message) {
     'INSERT INTO notifications (user_id, demande_id, type, message, lue, date) VALUES ($1,$2,$3,$4,0,$5)',
     [userId, demandeId, type, message, now()]
   )
+  // Email si l'utilisateur a activé les notifications mail + email renseigné (non bloquant)
+  try {
+    const u = await one('SELECT email, notif_mail FROM utilisateurs WHERE id=$1', [userId])
+    if (u?.notif_mail && u.email) {
+      sendMail(u.email, 'INDUS — notification', `<p>${message}</p>`).catch(() => {})
+    }
+  } catch { /* ignore */ }
 }
 
 // Petit wrapper pour gérer proprement les erreurs async dans les routes Express

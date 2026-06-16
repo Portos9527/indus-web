@@ -7,7 +7,7 @@ import { now, wrap } from '../helpers.js'
 const r = Router()
 r.use(authenticate)
 
-const SAFE = 'id, nom_session, nom_affiche, role, initiales, email, actif, derniere_connexion, date_creation'
+const SAFE = 'id, nom_session, nom_affiche, role, initiales, email, actif, notif_mail, derniere_connexion, date_creation'
 
 // Tous les utilisateurs (admin)
 r.get('/', requireRole(3), wrap(async (req, res) => {
@@ -65,6 +65,17 @@ r.post('/:id/toggle', requireRole(3), wrap(async (req, res) => {
     `UPDATE utilisateurs SET actif = CASE WHEN actif=1 THEN 0 ELSE 1 END WHERE id=$1 RETURNING ${SAFE}`,
     [req.params.id]
   )
+  res.json(u)
+}))
+
+// Activer/désactiver les notifications email d'un utilisateur (responsable+ pour son équipe)
+r.post('/:id/notif-mail', requireRole(2), wrap(async (req, res) => {
+  const cible = await one('SELECT role FROM utilisateurs WHERE id=$1', [req.params.id])
+  if (!cible) return res.status(404).json({ error: 'Utilisateur introuvable' })
+  // un responsable (2) ne gère que les rôles strictement inférieurs ; un admin gère tout le monde
+  if (req.user.role < 3 && cible.role >= req.user.role) return res.status(403).json({ error: 'Hors de votre périmètre' })
+  const val = req.body?.enabled ? 1 : 0
+  const u = await one(`UPDATE utilisateurs SET notif_mail=$1 WHERE id=$2 RETURNING ${SAFE}`, [val, req.params.id])
   res.json(u)
 }))
 
