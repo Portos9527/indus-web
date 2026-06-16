@@ -46,6 +46,8 @@
         <RouterLink class="nav-item" to="/support"><span>🆘</span><span class="nav-label">Support</span></RouterLink>
       </nav>
 
+      <div class="sb-status"><StatusBadge /></div>
+
       <div class="sb-footer">
         <span class="sb-version">v1.0 web</span>
         <button class="btn btn-ghost btn-sm" @click="toggleDark">{{ store.darkMode ? '☀️' : '🌙' }}</button>
@@ -64,6 +66,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { store, toggleDark, roleLabel, avatarColor, initials } from '../store.js'
 import { api } from '../api.js'
+import StatusBadge from './StatusBadge.vue'
 
 const router = useRouter()
 const user = computed(() => store.user)
@@ -83,6 +86,7 @@ onMounted(async () => {
 
 <style scoped>
 .sb-divider { height: 1px; background: var(--sb-border); margin: 6px 12px; }
+.sb-status { padding: 8px 14px; }
 .sb-footer { display: flex; align-items: center; gap: 8px; }
 .router-link-active.nav-item { background: var(--sb-active-bg); color: var(--sb-active); }
 </style>

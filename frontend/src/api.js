@@ -15,8 +15,10 @@ async function request(method, path, body) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
+    store.online = false
     return { ok: false, error: 'Serveur injoignable' }
   }
+  store.online = true
 
   if (res.status === 401) {
     // Session expirée → déconnexion

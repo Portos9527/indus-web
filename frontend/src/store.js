@@ -7,6 +7,7 @@ export const store = reactive({
   categories: [],
   badges: { validation: 0, notifs: 0 },
   toasts: [],
+  online: true,
   darkMode: localStorage.getItem('indus-dark') === 'true',
 
   _logoutHooks: [],

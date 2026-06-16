@@ -3,6 +3,7 @@ import { router } from './router.js'
 import { store } from './store.js'
 import { api } from './api.js'
 import { startRealtime } from './realtime.js'
+import { startHealth } from './health.js'
 import './style.css'
 import App from './App.vue'
 
@@ -22,6 +23,9 @@ async function boot() {
     else store.logout()
   }
   createApp(App).use(router).mount('#app')
+
+  // Surveillance en ligne / hors ligne
+  startHealth()
 
   // Auto-rafraîchissement du profil : au retour sur l'onglet + toutes les 30 s
   window.addEventListener('focus', refreshMe)

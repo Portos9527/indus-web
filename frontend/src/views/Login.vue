@@ -45,7 +45,10 @@
         </div>
       </div>
 
-      <div class="login-help">Besoin d'aide ? Contactez votre administrateur · poste 1309</div>
+      <div class="login-help">
+        <StatusBadge />
+        <span>Besoin d'aide ? Contactez votre administrateur · poste 1309</span>
+      </div>
     </div>
   </div>
 </template>
@@ -56,6 +59,7 @@ import { useRouter } from 'vue-router'
 import { store } from '../store.js'
 import { api } from '../api.js'
 import { startRealtime } from '../realtime.js'
+import StatusBadge from '../components/StatusBadge.vue'
 import logoUrl from '../assets/logo.png'
 
 const router = useRouter()
@@ -140,7 +144,7 @@ function loginSso() {
 .sso-label { font-size: 13px; font-weight: 700; color: var(--text-1); }
 .sso-hint { font-size: 12px; color: var(--text-3); margin: 12px 0 0; text-align: center; }
 
-.login-help { text-align: center; font-size: 12px; color: var(--text-3); margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); }
+.login-help { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); }
 
 @media (max-width: 640px) {
   .login-cols { grid-template-columns: 1fr; }
