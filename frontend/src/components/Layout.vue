@@ -3,8 +3,11 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sb-logo">
-        <h2>INDUS</h2>
-        <span>Ingénierie Industrielle</span>
+        <img :src="logoUrl" class="sb-logo-img" alt="INDUS" />
+        <div class="sb-logo-text">
+          <h2>INDUS</h2>
+          <span>Ingénierie Industrielle</span>
+        </div>
       </div>
 
       <div v-if="user" class="sb-user">
@@ -67,6 +70,7 @@ import { useRouter } from 'vue-router'
 import { store, toggleDark, roleLabel, avatarColor, initials } from '../store.js'
 import { api } from '../api.js'
 import StatusBadge from './StatusBadge.vue'
+import logoUrl from '../assets/logo.png'
 
 const router = useRouter()
 const user = computed(() => store.user)
@@ -85,6 +89,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.sb-logo { display: flex; align-items: center; gap: 10px; }
+.sb-logo-img { width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.sb-logo-text { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.sb-logo-text h2 { margin: 0; }
 .sb-divider { height: 1px; background: var(--sb-border); margin: 6px 12px; }
 .sb-status { padding: 8px 14px; }
 .sb-footer { display: flex; align-items: center; gap: 8px; }
