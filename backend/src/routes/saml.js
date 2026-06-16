@@ -1,16 +1,35 @@
 import { Router } from 'express'
 import express from 'express'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { SAML } from '@node-saml/node-saml'
 import { one } from '../db.js'
 import { signToken } from '../auth.js'
 import { now, wrap } from '../helpers.js'
+
+// Certificat de l'IdP : depuis SAML_CERT (inline, \n échappés) ou SAML_CERT_FILE (chemin)
+function loadIdpCert() {
+  if (process.env.SAML_CERT) return process.env.SAML_CERT.replace(/\\n/g, '\n')
+  let file = process.env.SAML_CERT_FILE
+  if (!file) {
+    // Par défaut : backend/saml/idp.crt s'il existe (déposé via le dépôt)
+    const here = path.dirname(fileURLToPath(import.meta.url))
+    const def = path.resolve(here, '../saml/idp.crt')
+    if (fs.existsSync(def)) file = def
+  }
+  if (file && fs.existsSync(file)) {
+    try { return fs.readFileSync(file, 'utf8') } catch { /* ignore */ }
+  }
+  return ''
+}
 
 // ── Configuration depuis l'environnement ──
 const CFG = {
   entryPoint: process.env.SAML_ENTRY_POINT || '',      // URL SSO de l'IdP (SOLCERA)
   issuer: process.env.SAML_ISSUER || 'indus-web',       // entityID du SP (notre app)
   callbackUrl: process.env.SAML_CALLBACK_URL || '',     // notre ACS (https://…/api/auth/saml/acs)
-  idpCert: (process.env.SAML_CERT || '').replace(/\\n/g, '\n'), // certif x509 de l'IdP
+  idpCert: loadIdpCert(),                                // certif x509 de l'IdP
   logoutUrl: process.env.SAML_LOGOUT_URL || '',
 }
 const APP_URL = process.env.APP_URL || process.env.CORS_ORIGIN || ''
