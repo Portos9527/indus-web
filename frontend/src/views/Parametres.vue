@@ -191,17 +191,20 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { store, toastSuccess, toastError, ROLE_LABEL } from '../store.js'
 import { api } from '../api.js'
 
-const isEditeur = computed(() => (store.user?.role ?? 0) >= 4)
+const role = computed(() => store.user?.role ?? 0)
+const isAdmin = computed(() => role.value >= 3)
+const isEditeur = computed(() => role.value >= 4)
 const tabs = computed(() => {
   const t = [
-    { id:'smtp', label:'📧 SMTP' }, { id:'sla', label:'⏱️ Délais' },
-    { id:'perms', label:'🔐 Permissions' }, { id:'profils', label:'👥 Profils techniciens' },
-    { id:'diag', label:'🩺 Diagnostic' }, { id:'sql', label:'🖥️ SQL' }, { id:'export', label:'📥 Export' },
+    { id:'sla', label:'⏱️ Délais' },
+    { id:'perms', label:'🔐 Permissions' },
+    { id:'profils', label:'👥 Profils techniciens' },
   ]
+  if (isAdmin.value) t.push({ id:'smtp', label:'📧 SMTP' }, { id:'diag', label:'🩺 Diagnostic' }, { id:'sql', label:'🖥️ SQL' }, { id:'export', label:'📥 Export' })
   if (isEditeur.value) t.push({ id:'editeur', label:'👑 Éditeur (tables)' })
   return t
 })
-const tab = ref('smtp')
+const tab = ref('sla')
 const s = ref({ smtp:{host:'',port:587,secure:false,user:'',pass:'',from:'',responsables:[]}, sla:{urgente:3,haute:7,normale:14,faible:30} })
 const respRaw = ref('')
 const diag = ref([])
@@ -223,16 +226,26 @@ const PROF_DEF = { dispo:'available', capacite:5, couleur:'#3B82F6', competences
 const edTables = ref([]); const edTable = ref(null); const edCols = ref([]); const edRows = ref([]); const edTotal = ref(0); const rowModal = ref(null)
 
 onMounted(async () => {
-  const [r, u, t] = await Promise.all([api.getSettings(), api.users(), api.techniciens()])
-  if (r.ok) { s.value = { permsRole:{}, permsUser:{}, techProfiles:{}, ...s.value, ...r.data }; respRaw.value = (r.data.smtp?.responsables || []).join('\n') }
-  if (u.ok) users.value = u.data
+  // Admin : accès complet ; Responsable : réglages d'équipe uniquement (sans SMTP)
+  const settingsCall = isAdmin.value ? api.getSettings() : api.teamSettings()
+  const calls = [settingsCall, api.techniciens()]
+  if (isAdmin.value) calls.push(api.users())   // liste complète pour surcharges
+  else calls.push(api.equipe())                // responsable : son équipe
+  const [r, t, u] = await Promise.all(calls)
+  if (r.ok) { s.value = { smtp:{host:'',port:587,secure:false,user:'',pass:'',from:'',responsables:[]}, permsRole:{}, permsUser:{}, techProfiles:{}, ...s.value, ...r.data }; respRaw.value = (r.data.smtp?.responsables || []).join('\n') }
   if (t.ok) techs.value = t.data
-  loadDiag()
+  if (u.ok) users.value = u.data
+  if (isAdmin.value) loadDiag()
 })
 async function save() {
-  s.value.smtp.responsables = respRaw.value.split('\n').map(x=>x.trim()).filter(Boolean)
-  const r = await api.saveSettings({ smtp:s.value.smtp, sla:s.value.sla, permsRole:s.value.permsRole, permsUser:s.value.permsUser, techProfiles:s.value.techProfiles })
-  if (r.ok) toastSuccess('Paramètres enregistrés'); else toastError(r.error)
+  if (isAdmin.value) {
+    s.value.smtp.responsables = respRaw.value.split('\n').map(x=>x.trim()).filter(Boolean)
+    const r = await api.saveSettings({ smtp:s.value.smtp, sla:s.value.sla, permsRole:s.value.permsRole, permsUser:s.value.permsUser, techProfiles:s.value.techProfiles })
+    r.ok ? toastSuccess('Paramètres enregistrés') : toastError(r.error)
+  } else {
+    const r = await api.saveTeamSettings({ sla:s.value.sla, permsRole:s.value.permsRole, permsUser:s.value.permsUser, techProfiles:s.value.techProfiles })
+    r.ok ? toastSuccess('Paramètres enregistrés') : toastError(r.error)
+  }
 }
 
 // ── Permissions ──

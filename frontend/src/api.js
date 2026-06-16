@@ -148,6 +148,8 @@ export const api = {
   // Admin : paramètres, diagnostics, SQL, export
   getSettings:    ()        => get('/admin/settings'),
   saveSettings:   (p)       => put('/admin/settings', p),
+  teamSettings:   ()        => get('/admin/team-settings'),
+  saveTeamSettings:(p)      => put('/admin/team-settings', p),
   testSmtp:       ()        => post('/admin/smtp-test'),
   diagnostics:    ()        => get('/admin/diagnostics'),
   sql:            (q)       => post('/admin/sql', { sql: q }),

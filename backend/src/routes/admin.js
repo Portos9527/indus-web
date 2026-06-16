@@ -31,6 +31,19 @@ r.put('/settings', requireRole(3), wrap(async (req, res) => {
   res.json(await saveSettings(patch))
 }))
 
+// Réglages d'équipe (SLA, permissions, profils) — accessibles aux responsables (role 2),
+// sans exposer la config SMTP.
+r.get('/team-settings', requireRole(2), wrap(async (req, res) => {
+  const s = await getSettings()
+  res.json({ sla: s.sla, permsRole: s.permsRole, permsUser: s.permsUser, techProfiles: s.techProfiles })
+}))
+r.put('/team-settings', requireRole(2), wrap(async (req, res) => {
+  const allow = {}
+  for (const k of ['sla', 'permsRole', 'permsUser', 'techProfiles']) if (k in (req.body || {})) allow[k] = req.body[k]
+  const s = await saveSettings(allow)
+  res.json({ sla: s.sla, permsRole: s.permsRole, permsUser: s.permsUser, techProfiles: s.techProfiles })
+}))
+
 r.post('/smtp-test', requireRole(3), wrap(async (req, res) => {
   await testSmtp()
   res.json({ ok: true, message: 'Connexion SMTP réussie' })

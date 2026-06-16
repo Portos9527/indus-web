@@ -12,7 +12,6 @@ import ToutesDemandes from './views/ToutesDemandes.vue'
 import Validation from './views/Validation.vue'
 import PlanDeCharge from './views/PlanDeCharge.vue'
 import Dashboard from './views/Dashboard.vue'
-import MonDashboard from './views/MonDashboard.vue'
 import Analyses from './views/Analyses.vue'
 import Administration from './views/Administration.vue'
 import Parametres from './views/Parametres.vue'
@@ -29,7 +28,7 @@ const routes = [
       { path: 'mes-demandes',   component: MesDemandes },
       { path: 'nouvelle',       component: NouvelleDemande },
       { path: 'mes-taches',     component: MesTaches,     meta: { role: 1 } },
-      { path: 'mon-dashboard',  component: MonDashboard,  meta: { role: 1 } },
+      { path: 'mon-dashboard',  redirect: '/mes-taches' },
       { path: 'recherche',      component: Recherche },
       { path: 'validation',     component: Validation,    meta: { role: 2 } },
       { path: 'plan-de-charge', component: PlanDeCharge,  meta: { role: 2 } },
@@ -37,7 +36,7 @@ const routes = [
       { path: 'toutes',         component: ToutesDemandes, meta: { role: 2 } },
       { path: 'analyses',       component: Analyses,      meta: { role: 2 } },
       { path: 'administration', component: Administration, meta: { role: 3 } },
-      { path: 'parametres',     component: Parametres,    meta: { role: 3 } },
+      { path: 'parametres',     component: Parametres,    meta: { role: 2 } },
       { path: 'support',        component: Support },
     ],
   },
