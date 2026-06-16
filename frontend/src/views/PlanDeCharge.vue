@@ -36,7 +36,7 @@
             <div v-for="c in congesFor(tech.id)" :key="'c'+c.id" class="g-conge" :style="bandStyle(c.date_debut, c.date_fin)" :title="'Congés '+c.motif">🏖️</div>
             <div class="g-today" :style="{ left: todayX+'px' }"></div>
             <template v-for="(d,lane) in tech.demandes" :key="d.id">
-              <div class="g-bar" :class="prioClass(d.priorite)" :style="barStyle(d,lane)" :title="d.titre" @click="detail=d">
+              <div class="g-bar" :class="prioClass(d.priorite)" :style="barStyle(d,lane)" :title="d.titre" @click="openDetail(d, tech)">
                 <div class="g-bar-prog" :style="{ width: (d.avancement||0)+'%' }"></div>
                 <span class="g-bar-lbl">{{ d.titre }}</span>
               </div>
@@ -47,16 +47,44 @@
       </div>
     </div>
 
-    <!-- Mini détail -->
+    <!-- Fiche détail tâche -->
     <div v-if="detail" class="modal-overlay" @click.self="detail=null">
-      <div class="modal" style="max-width:420px">
-        <div class="modal-header"><h2 style="font-size:15px">{{ detail.titre }}</h2><button class="btn btn-ghost btn-sm" @click="detail=null">✕</button></div>
-        <div class="modal-body">
-          <p><strong>Statut :</strong> {{ detail.statut }} · <strong>{{ detail.avancement }}%</strong></p>
-          <p><strong>Échéance :</strong> {{ formatDate(detail.date_limite) }}</p>
-          <div style="margin-top:12px;font-weight:700">⏳ Temps masqué</div>
-          <div v-if="masquesFor(detail.id).length===0" style="color:var(--text-3);font-size:12px">Aucune période d'attente</div>
-          <div v-for="m in masquesFor(detail.id)" :key="m.id" style="font-size:13px;padding:4px 0">📅 {{ formatDate(m.date_debut) }} → {{ formatDate(m.date_fin) }} — {{ m.motif }}</div>
+      <div class="pdc-detail" :style="{ '--accent': prioColor(detail.priorite) }">
+        <div class="pdc-d-accent"></div>
+        <div class="pdc-d-head">
+          <div class="pdc-d-titlewrap">
+            <span class="pdc-d-prio" :style="{ background: prioColor(detail.priorite) }">{{ prioLabel(detail.priorite) }}</span>
+            <h2 class="pdc-d-title">{{ detail.titre }}</h2>
+          </div>
+          <button class="pdc-d-close" @click="detail=null" title="Fermer">✕</button>
+        </div>
+
+        <div class="pdc-d-body">
+          <div v-if="detail._tech" class="pdc-d-tech">
+            <span class="g-av" style="width:26px;height:26px;font-size:10px" :style="{ background: color(detail._tech.id) }">{{ ini(detail._tech.nom_affiche) }}</span>
+            <span>{{ detail._tech.nom_affiche }}</span>
+          </div>
+
+          <div class="pdc-d-prog-row">
+            <div class="pdc-d-prog"><div class="pdc-d-prog-fill" :style="{ width:(detail.avancement||0)+'%', background: prioColor(detail.priorite) }"></div></div>
+            <span class="pdc-d-prog-val">{{ detail.avancement || 0 }}%</span>
+          </div>
+
+          <div class="pdc-d-grid">
+            <div class="pdc-d-cell"><span class="lbl">Statut</span><span class="val">{{ detail.statut }}</span></div>
+            <div class="pdc-d-cell"><span class="lbl">Délai</span><span class="val" :class="'ech-'+(ech?.cls||'ok')">{{ ech?.label || '—' }}</span></div>
+            <div class="pdc-d-cell"><span class="lbl">Début</span><span class="val">{{ formatDate(detail.date_creation) }}</span></div>
+            <div class="pdc-d-cell"><span class="lbl">Échéance</span><span class="val">{{ formatDate(detail.date_limite) }}</span></div>
+          </div>
+
+          <div class="pdc-d-section">
+            <div class="pdc-d-sec-title">⏳ Temps masqué <span class="pdc-d-count">{{ masquesFor(detail.id).length }}</span></div>
+            <div v-if="masquesFor(detail.id).length===0" class="pdc-d-empty">Aucune période d'attente</div>
+            <div v-for="m in masquesFor(detail.id)" :key="m.id" class="pdc-d-masque">
+              <span class="pdc-d-masque-dates">📅 {{ formatDate(m.date_debut) }} → {{ formatDate(m.date_fin) }}</span>
+              <span class="pdc-d-masque-motif">{{ m.motif || '—' }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -112,6 +140,18 @@ function color(id){ return avatarColor(id) }
 function ini(n){ return initials(n) }
 function rowH(t){ const c=Math.max(1,t.demandes.length); return PAD*2+c*BAR_H+(c-1)*BAR_GAP }
 function prioClass(p){ return (p||'').toLowerCase()==='urgente' ? 'p-urg' : 'p-norm' }
+function prioColor(p){ const x=(p||'').toLowerCase(); return x==='urgente'?'#ef4444':x==='haute'?'#f59e0b':x==='faible'?'#94a3b8':'#3b82f6' }
+function prioLabel(p){ const x=(p||'normale').toLowerCase(); return x.charAt(0).toUpperCase()+x.slice(1) }
+function openDetail(d, tech){ detail.value = { ...d, _tech: tech } }
+const ech = computed(() => {
+  const d = detail.value; if(!d?.date_limite) return null
+  const lim = parseD(d.date_limite), t = parseD(todayStr)
+  const days = Math.round((lim - t)/864e5)
+  if(/clôtur|cloturé|terminé|abandon/i.test(d.statut||'')) return { label:'Terminée', cls:'ok' }
+  if(days < 0)  return { label:`En retard de ${-days} j`, cls:'late' }
+  if(days === 0) return { label:"Échéance aujourd'hui", cls:'warn' }
+  return { label:`Dans ${days} j`, cls: days<=3 ? 'warn' : 'ok' }
+})
 
 function barStyle(d,lane){
   const s=parseD(d.date_creation)||winStart, e=parseD(d.date_limite)||winEnd
@@ -179,4 +219,34 @@ async function delConge(id){ const r=await api.supprConge(id); if(r.ok) congesLi
 .g-bar-lbl { position: relative; z-index: 1; padding: 0 7px; font-size: 10.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
 .g-conge { position: absolute; top: 0; bottom: 0; z-index: 2; background: repeating-linear-gradient(45deg,rgba(245,158,11,.16),rgba(245,158,11,.16) 6px,rgba(245,158,11,.3) 6px,rgba(245,158,11,.3) 12px); border-left: 2px dashed #d97706; border-right: 2px dashed #d97706; display: flex; justify-content: center; font-size: 11px; }
 .g-masque { position: absolute; border-radius: 4px; z-index: 5; background: repeating-linear-gradient(45deg,rgba(255,255,255,.85),rgba(255,255,255,.85) 3px,rgba(148,163,184,.55) 3px,rgba(148,163,184,.55) 7px); box-shadow: 0 0 0 1px rgba(100,116,139,.5) inset; }
+
+/* ── Fiche détail tâche ── */
+.pdc-detail { position: relative; width: 100%; max-width: 440px; background: var(--card,#fff); border-radius: 16px; overflow: hidden; box-shadow: 0 24px 60px rgba(15,23,42,.28); animation: pdc-pop .16s ease-out; }
+@keyframes pdc-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+.pdc-d-accent { height: 5px; background: var(--accent,#3b82f6); }
+.pdc-d-head { display: flex; align-items: flex-start; gap: 10px; padding: 16px 18px 12px; }
+.pdc-d-titlewrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.pdc-d-prio { align-self: flex-start; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #fff; padding: 3px 9px; border-radius: 999px; }
+.pdc-d-title { font-size: 17px; font-weight: 800; margin: 0; line-height: 1.25; color: var(--text-1); word-break: break-word; }
+.pdc-d-close { border: none; background: none; cursor: pointer; font-size: 16px; color: var(--text-3); padding: 4px 6px; border-radius: 7px; line-height: 1; }
+.pdc-d-close:hover { background: var(--bg,#f1f5f9); color: var(--text-1); }
+.pdc-d-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.pdc-d-tech { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.pdc-d-tech .g-av { border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+.pdc-d-prog-row { display: flex; align-items: center; gap: 10px; }
+.pdc-d-prog { flex: 1; height: 9px; border-radius: 999px; background: var(--bg,#eef2f7); overflow: hidden; }
+.pdc-d-prog-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
+.pdc-d-prog-val { font-size: 13px; font-weight: 800; color: var(--text-1); min-width: 38px; text-align: right; }
+.pdc-d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.pdc-d-cell { background: var(--card,#fff); padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
+.pdc-d-cell .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-3); font-weight: 700; }
+.pdc-d-cell .val { font-size: 13.5px; font-weight: 600; color: var(--text-1); }
+.val.ech-late { color: #dc2626; } .val.ech-warn { color: #d97706; } .val.ech-ok { color: #16a34a; }
+.pdc-d-section { }
+.pdc-d-sec-title { font-size: 12.5px; font-weight: 700; color: var(--text-2); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.pdc-d-count { background: var(--bg,#eef2f7); color: var(--text-3); font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; }
+.pdc-d-empty { font-size: 12.5px; color: var(--text-3); font-style: italic; }
+.pdc-d-masque { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 7px 10px; border-radius: 8px; background: var(--bg,#f8fafc); margin-bottom: 5px; }
+.pdc-d-masque-dates { color: var(--text-1); font-weight: 600; }
+.pdc-d-masque-motif { color: var(--text-3); }
 </style>
