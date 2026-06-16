@@ -6,3 +6,6 @@ node_modules/
 # il est déployé tel quel sur la VM via git pull (pas de build sur la VM).
 # (backend n'a pas de dist)
 !frontend/dist/
+
+# Régénéré par npm install sur chaque machine (évite les conflits de pull)
+package-lock.json
