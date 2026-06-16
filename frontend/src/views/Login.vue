@@ -107,7 +107,7 @@ function loginSso() {
 .login-brand { font-size: 28px; font-weight: 900; letter-spacing: 3px; margin: 0; color: var(--text-1); }
 .login-tag { font-size: 13px; color: var(--text-3); margin: 2px 0 0; }
 
-.login-cols { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 28px; align-items: start; }
+.login-cols { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 28px; align-items: stretch; }
 .login-cols::before { content: ''; grid-column: 2; align-self: stretch; background: var(--border); }
 .login-cols.solo { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
 .login-cols.solo::before { display: none; }
@@ -134,7 +134,7 @@ function loginSso() {
 @keyframes spin { to { transform: rotate(360deg) } }
 
 /* Tuile SSO */
-.col-sso { display: flex; flex-direction: column; align-items: center; }
+.col-sso { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .sso-tile { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 200px;
   padding: 26px 20px; background: var(--card, #fff); border: 1.5px solid var(--border); border-radius: 14px;
   cursor: pointer; transition: .15s; }
