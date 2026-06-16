@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import { runMigrations } from './migrations.js'
 import { sseHandler, clientCount } from './events.js'
@@ -46,6 +48,18 @@ app.use('/api', miscRoutes)
 
 // 404 API
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }))
+
+// ── Frontend de production ──
+// Sert le build Vite (frontend/dist) + fallback SPA pour le routeur Vue.
+// Désactivable avec SERVE_FRONTEND=0 (ex. si un reverse proxy s'en charge).
+if (process.env.SERVE_FRONTEND !== '0') {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  const distDir = process.env.FRONTEND_DIST || path.resolve(__dirname, '../../frontend/dist')
+  app.use(express.static(distDir))
+  // Toute route non-API renvoie index.html (SPA)
+  app.get(/^(?!\/api).*/, (req, res) => res.sendFile(path.join(distDir, 'index.html')))
+  console.log(`🖥️  Frontend servi depuis ${distDir}`)
+}
 
 const PORT = process.env.PORT || 3001
 
