@@ -12,7 +12,6 @@ import ToutesDemandes from './views/ToutesDemandes.vue'
 import Validation from './views/Validation.vue'
 import PlanDeCharge from './views/PlanDeCharge.vue'
 import Dashboard from './views/Dashboard.vue'
-import Analyses from './views/Analyses.vue'
 import Administration from './views/Administration.vue'
 import Parametres from './views/Parametres.vue'
 import Support from './views/Support.vue'
@@ -34,7 +33,7 @@ const routes = [
       { path: 'plan-de-charge', component: PlanDeCharge,  meta: { role: 2 } },
       { path: 'dashboard',      component: Dashboard,     meta: { role: 2 } },
       { path: 'toutes',         component: ToutesDemandes, meta: { role: 2 } },
-      { path: 'analyses',       component: Analyses,      meta: { role: 2 } },
+      { path: 'analyses',       redirect: '/dashboard' },
       { path: 'administration', component: Administration, meta: { role: 3 } },
       { path: 'parametres',     component: Parametres,    meta: { role: 2 } },
       { path: 'support',        component: Support },

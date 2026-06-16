@@ -36,7 +36,6 @@
           <RouterLink class="nav-item" to="/plan-de-charge"><span>📈</span><span class="nav-label">Plan de Charge</span></RouterLink>
           <RouterLink class="nav-item" to="/toutes"><span>📁</span><span class="nav-label">Toutes les Demandes</span></RouterLink>
           <RouterLink class="nav-item" to="/dashboard"><span>📊</span><span class="nav-label">Dashboard</span></RouterLink>
-          <RouterLink class="nav-item" to="/analyses"><span>📈</span><span class="nav-label">Analyses</span></RouterLink>
           <RouterLink class="nav-item" to="/parametres"><span>⚙️</span><span class="nav-label">Paramètres</span></RouterLink>
         </template>
 

@@ -5,6 +5,18 @@
     </select>
   </div>
   <div class="page-content" v-if="s">
+    <div class="health-banner" :class="'h-'+health.cls">
+      <div class="health-gauge">
+        <div class="health-score">{{ health.score }}<span>/100</span></div>
+      </div>
+      <div class="health-meta">
+        <div class="health-title">💪 Santé du service</div>
+        <div class="health-label">{{ health.label }}</div>
+        <div class="health-track"><div class="health-fill" :style="{ width: health.score+'%' }"></div></div>
+        <div class="health-hint">{{ s.en_retard }} en retard · {{ s.urgentes }} urgente(s)</div>
+      </div>
+    </div>
+
     <div class="kpi-grid">
       <div class="kpi b"><div class="v">{{ s.ouvertes }}</div><div class="l">Ouvertes</div></div>
       <div class="kpi a"><div class="v">{{ s.nouvelles }}</div><div class="l">À valider</div></div>
@@ -48,12 +60,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { api } from '../api.js'
 import { onEntities } from '../realtime.js'
 import Chart from 'chart.js/auto'
 
 const s = ref(null), mois = ref(3)
+const health = computed(() => {
+  if (!s.value) return { score: 0, cls: 'red', label: '—' }
+  let sc = 100
+  sc -= Math.min(40, (s.value.en_retard || 0) * 4)
+  sc -= (s.value.urgentes || 0) * 5
+  sc = Math.max(0, Math.min(100, sc))
+  let cls = 'red', label = 'Critique'
+  if (sc >= 85) { cls = 'green'; label = 'Excellent' }
+  else if (sc >= 70) { cls = 'blue'; label = 'Bon' }
+  else if (sc >= 50) { cls = 'orange'; label = 'À surveiller' }
+  return { score: sc, cls, label }
+})
 const cStatut = ref(null), cTech = ref(null)
 let i1, i2
 const STAT_COLORS = { 'Nouvelle':'#3B82F6','En cours':'#F59E0B','En attente de validation':'#D97706','Clôturée':'#10B981','Abandonnée':'#6B7280','Rejetée':'#EF4444' }
@@ -74,6 +98,20 @@ onUnmounted(() => { stop && stop(); if (i1) i1.destroy(); if (i2) i2.destroy() }
 </script>
 
 <style scoped>
+.health-banner { display: flex; align-items: center; gap: 20px; padding: 18px 22px; border-radius: 16px; margin-bottom: 16px; color: #fff; box-shadow: 0 8px 22px rgba(15,23,42,.12); }
+.health-banner.h-green  { background: linear-gradient(135deg,#10b981,#059669); }
+.health-banner.h-blue   { background: linear-gradient(135deg,#3b82f6,#2563eb); }
+.health-banner.h-orange { background: linear-gradient(135deg,#f59e0b,#d97706); }
+.health-banner.h-red    { background: linear-gradient(135deg,#ef4444,#dc2626); }
+.health-gauge { flex-shrink: 0; }
+.health-score { font-size: 44px; font-weight: 900; line-height: 1; }
+.health-score span { font-size: 17px; font-weight: 700; opacity: .8; }
+.health-meta { flex: 1; min-width: 0; }
+.health-title { font-size: 14px; font-weight: 800; }
+.health-label { font-size: 12px; font-weight: 700; opacity: .92; margin-top: 2px; }
+.health-track { height: 8px; border-radius: 99px; background: rgba(255,255,255,.28); overflow: hidden; margin: 10px 0 6px; }
+.health-fill { height: 100%; border-radius: 99px; background: #fff; transition: width .4s ease; }
+.health-hint { font-size: 11.5px; opacity: .9; }
 .kpi-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 16px; }
 .kpi { border-radius: 14px; padding: 16px; color: #fff; }
 .kpi .v { font-size: 30px; font-weight: 800; }
