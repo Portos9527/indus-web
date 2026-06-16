@@ -32,6 +32,8 @@
           </form>
         </div>
 
+        <div v-if="ssoEnabled" class="login-divider"></div>
+
         <!-- Connexion automatique (SSO SAML) -->
         <div v-if="ssoEnabled" class="col col-sso">
           <h2 class="col-title">Connexion automatique</h2>
@@ -107,10 +109,10 @@ function loginSso() {
 .login-brand { font-size: 28px; font-weight: 900; letter-spacing: 3px; margin: 0; color: var(--text-1); }
 .login-tag { font-size: 13px; color: var(--text-3); margin: 2px 0 0; }
 
-.login-cols { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 28px; align-items: stretch; }
-.login-cols::before { content: ''; grid-column: 2; align-self: stretch; background: var(--border); }
-.login-cols.solo { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
-.login-cols.solo::before { display: none; }
+.login-cols { display: flex; align-items: stretch; gap: 28px; }
+.login-cols .col { flex: 1; min-width: 0; }
+.login-divider { width: 1px; flex: 0 0 1px; align-self: stretch; background: var(--border); }
+.login-cols.solo { max-width: 380px; margin: 0 auto; }
 .col-title { font-size: 15px; font-weight: 700; color: var(--text-1); margin: 0 0 18px; text-align: center; }
 
 .login-form { display: flex; flex-direction: column; gap: 13px; }
@@ -147,8 +149,8 @@ function loginSso() {
 .login-help { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); }
 
 @media (max-width: 640px) {
-  .login-cols { grid-template-columns: 1fr; }
-  .login-cols::before { display: none; }
+  .login-cols { flex-direction: column; }
+  .login-divider { display: none; }
   .col-sso { margin-top: 8px; padding-top: 20px; border-top: 1px solid var(--border); }
 }
 </style>
