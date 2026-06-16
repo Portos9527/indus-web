@@ -37,9 +37,10 @@
           <div style="display:flex;gap:8px;margin-top:12px"><input v-model="newFam" class="form-control" placeholder="Nouvelle famille…" @keyup.enter="addFamille" /><button class="btn btn-primary btn-sm" @click="addFamille">➕</button></div>
         </div></div>
         <div class="card"><div class="card-header"><h3>Catégories</h3></div><div class="card-body">
-          <select v-model="selFam" class="form-control" style="margin-bottom:10px"><option value="">— Famille —</option><option v-for="f in familles" :key="f.id" :value="f.valeur">{{ f.valeur }}</option></select>
+          <select v-model="selFam" class="form-control" style="margin-bottom:10px"><option value="">— Choisir une famille —</option><option v-for="f in familles" :key="f.id" :value="f.valeur">{{ f.valeur }}</option></select>
           <div v-for="c in catsFiltered" :key="c.id" class="cfg-row"><span style="flex:1">{{ c.valeur }}</span><button class="btn btn-ghost btn-sm" @click="delCat(c)">✕</button></div>
-          <div v-if="selFam" style="display:flex;gap:8px;margin-top:12px"><input v-model="newCat" class="form-control" placeholder="Nouvelle catégorie…" @keyup.enter="addCat" /><button class="btn btn-primary btn-sm" @click="addCat">➕</button></div>
+          <div v-if="selFam && catsFiltered.length===0" style="color:var(--text-3);font-size:13px;padding:6px 0">Aucune catégorie pour cette famille.</div>
+          <div style="display:flex;gap:8px;margin-top:12px"><input v-model="newCat" class="form-control" :placeholder="selFam ? 'Nouvelle catégorie…' : 'Choisissez une famille ci-dessus'" @keyup.enter="addCat" /><button class="btn btn-primary btn-sm" @click="addCat">➕</button></div>
         </div></div>
       </div>
     </div>
@@ -94,10 +95,10 @@ async function saveUser(){
 async function toggle(u){ const r=await api.toggleUser(u.id); if(r.ok) await loadUsers(); else toastError(r.error) }
 async function resetPwd(u){ const pw=prompt(`Nouveau mot de passe pour ${u.nom_affiche} :`); if(!pw) return; const r=await api.resetPassword(u.id,pw); if(r.ok) toastSuccess('Mot de passe réinitialisé'); else toastError(r.error) }
 
-async function addFamille(){ if(!newFam.value.trim())return; const r=await api.ajoutFamille(newFam.value); if(r.ok){familles.value.push(r.data);newFam.value='';toastSuccess('Famille ajoutée')} else toastError(r.error) }
-async function delFamille(f){ if(!confirm('Supprimer ?'))return; const r=await api.supprFamille(f.id); if(r.ok){familles.value=familles.value.filter(x=>x.id!==f.id);toastSuccess('Famille supprimée')} else toastError(r.error) }
-async function addCat(){ if(!selFam.value){toastError('Sélectionnez d\'abord une famille');return} if(!newCat.value.trim())return; const r=await api.ajoutCategorie(newCat.value,selFam.value); if(r.ok){categories.value.push(r.data);newCat.value='';toastSuccess('Catégorie ajoutée')} else toastError(r.error) }
-async function delCat(c){ if(!confirm('Supprimer ?'))return; const r=await api.supprCategorie(c.id); if(r.ok){categories.value=categories.value.filter(x=>x.id!==c.id);toastSuccess('Catégorie supprimée')} else toastError(r.error) }
+async function addFamille(){ if(!newFam.value.trim())return; const r=await api.ajoutFamille(newFam.value); if(r.ok){familles.value.push(r.data);store.familles=familles.value;newFam.value='';toastSuccess('Famille ajoutée')} else toastError(r.error) }
+async function delFamille(f){ if(!confirm('Supprimer ?'))return; const r=await api.supprFamille(f.id); if(r.ok){familles.value=familles.value.filter(x=>x.id!==f.id);store.familles=familles.value;toastSuccess('Famille supprimée')} else toastError(r.error) }
+async function addCat(){ if(!selFam.value){toastError('Sélectionnez d\'abord une famille');return} if(!newCat.value.trim())return; const r=await api.ajoutCategorie(newCat.value,selFam.value); if(r.ok){categories.value.push(r.data);store.categories=categories.value;newCat.value='';toastSuccess('Catégorie ajoutée')} else toastError(r.error) }
+async function delCat(c){ if(!confirm('Supprimer ?'))return; const r=await api.supprCategorie(c.id); if(r.ok){categories.value=categories.value.filter(x=>x.id!==c.id);store.categories=categories.value;toastSuccess('Catégorie supprimée')} else toastError(r.error) }
 </script>
 
 <style scoped>

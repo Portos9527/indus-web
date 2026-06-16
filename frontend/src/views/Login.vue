@@ -103,7 +103,7 @@ function loginSso() {
   padding: 36px 40px; box-shadow: 0 24px 60px rgba(15,23,42,.14); }
 
 .login-top { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-.login-logo { width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+.login-logo { width: 52px; height: 52px; border-radius: 13px; object-fit: cover; border: 1px solid var(--border, #e2e8f0); box-shadow: 0 2px 8px rgba(15,23,42,.08); }
 .login-brand { font-size: 28px; font-weight: 900; letter-spacing: 3px; margin: 0; color: var(--text-1); }
 .login-tag { font-size: 13px; color: var(--text-3); margin: 2px 0 0; }
 
